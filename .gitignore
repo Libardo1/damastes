@@ -1,5 +1,8 @@
 *.py[cod]
 
+#google specific
+webtables
+
 # C extensions
 *.so
 *.cpp
@@ -35,3 +38,4 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+.idea
