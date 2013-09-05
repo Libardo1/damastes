@@ -1,0 +1,198 @@
+{#
+ Template that visualizes a state object as defined in State.py.
+
+ Produces HTML tables showing the observed tables in the state, along with the
+ latent subject and relation indicators.
+
+ Also shows the numeric range of each relation and the range of each relation in
+  a separate table.
+
+  If present, displays heatmaps of various posterior probabilities give the current
+  latent settings.
+ #}
+
+{% macro to_id(x) -%}
+    {{ x[0] }}_{{ x[1] }}
+{%- endmacro %}
+
+{% macro link(name, id) %}
+    <a href="#{{ to_id(id) }}">{{ name }}</a>
+{% endmacro %}
+
+{% macro marker(id) %}
+    <span id="{{ to_id(id) }}"></span>
+{% endmacro %}
+
+{% macro float(x) %}
+    <span class='num'>{{ "%.2f"%x }}</span>
+{% endmacro %}
+
+{% macro ref(x) %}
+    <span class='ref'>{{ "%d"%x }}</span>
+{% endmacro %}
+
+{% macro obs(x) %}
+    <span class='obs'>{{ x }}</span>
+{% endmacro %}
+
+{% macro token(x, kind) %}
+    {% if kind=='sub' %}
+        {% set tokenizer=s.tokenizer %}
+    {% else %}
+        {% set tokenizer=s.col_tokenizer %}
+    {% endif %}
+    {{ obs(tokenizer.StrForToken(x)) }}
+{% endmacro %}
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Inference summary</title>
+    <style>
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .ref {
+            color: blue;
+        }
+
+        .num {
+            color: green;
+        }
+
+        .obs {
+            color: red;
+        }
+
+        td, th {
+            padding-right: 20px;
+            border: 1px solid black;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        ol, ul, .raw_list {
+            list-style-type: none;
+        }
+
+        tr:nth-child(even) {
+            background-color: lightyellow;
+        }
+
+        .table_topic {
+            color: darkgoldenrod;
+        }
+
+        .subhead {
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+{% set cells=s.JoinedCells() %}
+<h1>Tables</h1>
+
+{% for table in s.tables.index %}
+    <table>
+        <tr>
+            <th></th>
+            {% for col in range(s.data_dims[table, 1]) %}
+                {% set col_obj=s.cols.loc[(table, col)] %}
+                <th>
+                    {{ token(col_obj['xr'], 'rel') }}<br>
+                    {{ link(ref(col_obj['zr']), ('zr', col_obj['zr'])) }}
+                </th>
+            {% endfor %}
+        </tr>
+        {% for row in range(s.data_dims[table, 0]) %}
+            {% set row_obj = s.rows.loc[(table, row)] %}
+            <tr>
+                <th>
+                    {{ token(row_obj['xs'], 'sub') }}<br>
+                    {{ link(ref(row_obj['zs']), ('zs', row_obj['zs'])) }}
+
+                </th>
+                {% for col in range(s.data_dims[table, 1]) %}
+                    {% set cell=cells.loc[(table, row, col)] %}
+                    <td>
+
+                        {% if cell.type==1 %}
+                            {{ obs("%.2f"%cell['xo_real']) }}<br>
+
+                        {% elif cell.type==0 %}
+                            {{ token(cell['xo_ref'], 'sub') }}<br>
+                            {{ ref(cell['ref']) }}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table><br>
+{% endfor %}
+
+<h2>Row subject posteriors</h2>
+<img src='row_posterior.svg'/>
+
+<h2>Column relation posteriors</h2>
+<img src='col_posterior.svg'/>
+
+
+<h1>Relations</h1>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Range (real)</th>
+        <th>Range (ref)</th>
+    </tr>
+    {% for rel_id, rel in s.rels.iterrows() %}
+        {% if rel['active'] %}
+            <tr>
+                <td>{{ marker(('zr', rel_id)) }} {{ rel_id }}</td>
+                <td>
+                    {{ float(rel['range_real_mu']) }}
+                </td>
+                <td>{{ ref(rel['range_ref']) }}</td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+
+
+<h1>Hypers</h1>
+<table>
+    {% for name, val in s.hypers.iteritems() %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ val }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+<h1>Topics</h1>
+<img src='../output/topic_sub_weights.svg'/>
+
+<h1>Tokens</h1>
+
+<h2>Subject-token posterior</h2>
+<img src='../output/sub_token_weights.svg'/>
+
+<h2>Relation-token posterior</h2>
+<img src='../output/rel_token_weights.svg'/>
+
+<table>
+    {% for token in range(s.n_tokens) %}
+        <tr>
+            <td>{{ token }}</td>
+            <td>{{ s.tokenizer.StrForToken(token) }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+</body>
+</html>

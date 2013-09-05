@@ -1,0 +1,20 @@
+"""Runs a profiler interactively.
+
+IPython script meant to be used interactively.
+From an IPython terminal (version 1.0 or greater), execute 'run profile.ipy'.
+Fill in test_func with the function to profile.
+
+To use on a Google workstation, open an IPython terminal in the blaze-bin directory
+containing this file after building the 'inference_main' target.
+
+Relies on gprof2dot: https://code.google.com/p/jrfonseca/wiki/Gprof2Dot
+"""
+
+def test_func():
+  pass
+
+%prun -D profile.lprof test_func()
+!gprof2dot.py -f pstats profile.lprof | dot -Tpdf -o profile.pdf
+%load_ext line_profiler
+
+%lprun -T output/line.prof -f posteriors.update_topics -f posteriors.topic_like -f posteriors.row_posterior -f posteriors.update_facts -f posteriors.update_rels test_func()
