@@ -37,7 +37,7 @@
 
 {% macro token(x, kind) %}
     {% if kind=='sub' %}
-        {% set tokenizer=s.tokenizer %}
+        {% set tokenizer=s.entity_tokenizer %}
     {% else %}
         {% set tokenizer=s.col_tokenizer %}
     {% endif %}
@@ -94,7 +94,7 @@
 </head>
 <body>
 
-{% set cells=s.JoinedCells() %}
+{% set cells=s.GetCellsJoinedWithFactsTable() %}
 <h1>Tables</h1>
 
 {% for table in s.tables.index %}
@@ -174,21 +174,21 @@
 </table>
 
 <h1>Topics</h1>
-<img src='../output/topic_sub_weights.svg'/>
+<img src='topic_sub_weights.svg'/>
 
 <h1>Tokens</h1>
 
 <h2>Subject-token posterior</h2>
-<img src='../output/sub_token_weights.svg'/>
+<img src='sub_token_weights.svg'/>
 
 <h2>Relation-token posterior</h2>
-<img src='../output/rel_token_weights.svg'/>
+<img src='rel_token_weights.svg'/>
 
 <table>
     {% for token in range(s.n_tokens) %}
         <tr>
             <td>{{ token }}</td>
-            <td>{{ s.tokenizer.StrForToken(token) }}</td>
+            <td>{{ s.entity_tokenizer.StrForToken(token) }}</td>
         </tr>
     {% endfor %}
 </table>

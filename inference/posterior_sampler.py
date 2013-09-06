@@ -38,9 +38,7 @@ def UpdateRows(state):
   and the observed contents of each cell,
   resample the latest row entity for each row in each table
   """
-
-  _, new_zs = cPosteriors.UpdateRowPosterior(state)
-  state.rows['zs'] = new_zs
+  cPosteriors.UpdateRowPosterior(state)
 
 
 def UpdateCols(state):
@@ -55,9 +53,9 @@ def UpdateRels(state):
   Update the range of each relation, given the values of objects of the
   relations and the priors over column ranges
   """
-  ref_posterior = cPosteriors.CalculateRangeRefPosterior(state)
+  ref_posterior = cPosteriors.CalculateEntityRangesPosterior(state)
   state.rels['range_ref'] = cDists.SampleCategoricalLnArray(ref_posterior)
-  cPosteriors.RangeRealPosterior(state)
+  cPosteriors.UpdateNumericRangesPosterior(state)
 
 
 def UpdateFacts(state):
@@ -67,18 +65,18 @@ def UpdateFacts(state):
   the observed rendered objects of each fact,
   resample the object of each (subject, relation) pair
   """
-  d = cPosteriors.FactPosteriorStats(state)
+  d = cPosteriors.TabulateFactPosteriorStats(state)
   stats_sum = d['sums']
   stats_len = d['lens']
   var_data = state.hypers['sd_xo'] ** 2
   f = state.GetFactsWithRanges()
   f_active = f.active == 1
-  new_facts = dists.SampleNormalPosterior(f[f_active].range_real_mu_mu,
+  new_facts = dists.SampleNormalPosterior(f[f_active].range_real_mu,
                                           f[f_active].range_real_sd**2,
                                           var_data, stats_sum[f_active],
                                           stats_len[f_active])
   state.facts.loc[f_active, 'real'] = new_facts
-  ref_posterior = cPosteriors.FactRefPosterior(state)
+  ref_posterior = cPosteriors.CalculateEntityFactsPosterior(state)
   state.facts.ref = cDists.SampleCategoricalLnArray(ref_posterior)
 
 

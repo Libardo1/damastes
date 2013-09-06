@@ -6,13 +6,13 @@ since it imports all of the modules you'd want to interact with.
 
 from __future__ import division
 import logging
+import util
 
 # The log config has to be set before importing the other modules, since
 # the external modules might configure basic logging differently and it can
 # only be changed once per process.
-logging.basicConfig(level=logging.DEBUG,
-                    format=('%(levelname)s %(asctime)s in '
-                            '%(module)s %(lineno)d: %(message)s'))
+util.ConfigureLogging()
+
 
 
 # Many of these imports are not actually used within the module, but are
@@ -33,7 +33,7 @@ from IPython.parallel import Client
 from IPython.config import Application
 import prior_sampler
 import posterior_sampler
-import util
+
 import copy
 import mcmc
 import state

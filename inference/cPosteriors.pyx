@@ -29,9 +29,7 @@ import numpy as np
 
 import cCollect
 import cDists
-#import google3.knowledge.graph.vault.open_world.inference.cDists
-# TODO(malmaud): Get cImports working with blaze. Vital for efficiency.
-#cimport cDists
+cimport cDists
 from libc.math cimport exp, log, sqrt
 
 cdef double inf=np.inf
@@ -107,7 +105,7 @@ def UpdateRowPosterior(state):
   cdef long table, row, zs, col, col_type
   cdef long n_cols, n_rows, n_tables, row_index, zr, n_subs
   cdef long fact_index, col_index, cell_index, zo, xo, new_zs, old_zs, xs
-  #cdef cDists.normal_parms numeric_parms
+  cdef cDists.normal_parms numeric_parms
 
 
   subject_token_counts = cCollect.TabulateSubjectTokenCounts(state, include_cells=True)
@@ -243,8 +241,8 @@ def UpdateNumericRangesPosterior(s):
   """
   cdef double[:] mu, sd, x
   cdef long zr, n_rels
-  #cdef cDists.normal_gamma_parms prior
-  #cdef cDists.normal_parms new_range
+  cdef cDists.normal_gamma_parms prior
+  cdef cDists.normal_parms new_range
   cdef long[:] counts
 
   d = cCollect.ExtractFactsForEachRelation(s)
@@ -589,7 +587,7 @@ def UpdateColumnPosterior(state):
   cdef double[:, :] rel_token_weights
   cdef double alpha, alpha_token, llh, mu_zr, sd_zr, obs_noise
   cdef long[:, :] cells_real_count, cells_ref_count
-  #cdef cDists.normal_parms new_range
+  cdef cDists.normal_parms new_range
 
   obs_noise = state.hypers['sd_xo']
   n_rels = state.n_rels

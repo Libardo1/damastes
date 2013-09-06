@@ -11,7 +11,6 @@ from libcpp.vector cimport vector
 from libc.stdlib cimport rand, RAND_MAX
 from libc.math cimport exp, log, sqrt
 import numpy as np
-#cimport numpy as np
 cimport gsl
 
 cdef gsl.gsl_rng* _RNG = gsl.gsl_rng_alloc(gsl.gsl_rng_taus)
@@ -30,7 +29,8 @@ cpdef double SampleGamma(double shape, double rate):
 cpdef double CalculateDirichletMultinomialLikelihood(long[:] counts,
                                                      double[:] alpha):
   cdef long N_levels, n
-  cdef double N, alpha_sum, numerator, denominator, correction_factor, normalizer, net_llh
+  cdef double N, alpha_sum, numerator, denominator
+  cdef double correction_factor, normalizer, net_llh
   N_levels = len(counts)
   N = 0. 
   alpha_sum = 0.
@@ -179,7 +179,6 @@ cpdef SampleDirichlet(double[:] alpha, double[:] output):
   Stores the sample in the provided 'output' array.
   Assumes the caller has already allocated that array.
   """
-
   cdef uint N, i
   cdef double normalizer
   N = len(alpha)
@@ -270,7 +269,7 @@ cpdef normal_gamma_parms NormalGammaPosteriorParms(normal_gamma_parms parms0,
   parms.nu = parms0.nu + N
   parms.shape = parms0.shape + N/2.
   dev = x_mean-parms0.mu
-  parms.scale = parms0.scale + .5 * (ssq + parms0.nu*N*dev*dev/(parms0.nu + N))
+  parms.rate = parms0.rate+ .5 * (ssq + parms0.nu*N*dev*dev/(parms0.nu + N))
   return parms
 
 

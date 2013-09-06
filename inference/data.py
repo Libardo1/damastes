@@ -5,7 +5,6 @@ import locale
 import logging
 import os
 import re
-import subprocess
 
 import dateutil
 import numpy as np
@@ -15,47 +14,37 @@ import prior_sampler
 import state
 import util
 
-from google3.pyglib import gfile
+
+def GetDataDir(dataset_name, file_name='state', extension='pickle'):
+  flags = util.GetFlags(True)
+  data_dir = flags['data_dir']
+  return os.path.join(data_dir, 'data', dataset_name, '%s.%s' % (file_name, extension))
 
 
-def GetDataDir(base, part, dataset_directory='input'):
-  return os.path.join(dataset_directory, base, '%s.pickle' % part)
-
-
-def LoadStateFromFile(dataset_name, directory='input'):
-  file_name = GetDataDir(dataset_name, 'state', directory)
-  with gfile.GFile(file_name) as input_file:
-    state_for_dataset = cPickle.load(input_file, 2)
+def LoadStateFromFile(dataset_name):
+  file_name = GetDataDir(dataset_name)
+  with open(file_name) as input_file:
+    state_for_dataset = cPickle.load(input_file)
   return state_for_dataset
 
 
-def SaveState(state_to_save, dataset_name, directory):
-  file_path = os.path.join(directory, dataset_name)
-  with gfile.GFile(file_path, 'w') as output_file:
+def SaveState(state_to_save, dataset_name):
+  file_path = GetDataDir(dataset_name)
+  with open(file_path, 'w') as output_file:
     cPickle.dump(state_to_save, output_file, 2)
 
 
-def GetSubsetOfTables(full_dataset, table_ids):
-  tables = [full_dataset.raw_tables[table_id] for table_id in table_ids]
-  desc = ExtractObsDimensionsFromRawTables(tables)
-  full_dataset = prior_sampler.SamplePrior(desc)
-  full_dataset.InitializeFromData(tables)
-  return full_dataset
+def LoadBotanyDataset():
+  state = LoadStateFromFile('botany')
+  prior_sampler.ResampleLatents(state)
+  state.Plot()
+  return state
 
 
-def ResetLatentVariables(original_state):
-  table_ids = range(len(original_state.raw_tables))
-  return GetSubsetOfTables(original_state, table_ids)
-
-
-def LoadBotanyDataset(max_rows=10, max_cols=4,
-                      max_tables=5, pull=False, matching=True):
-  if pull:
-    subprocess.call('fileutil cp /cns/gd-d/home/malmaud/tables.pickle .',
-                    shell=True)
+def LoadBotanyDatasetFromRawTables(max_rows=10, max_cols=4,
+                      max_tables=5, matching=True):
   with open('output/botany_tables.pickle') as f:
     tables = cPickle.load(f)
-
   # The following block applies hacky alterations to data
   # for demonstration purposes
   t = tables[3]
@@ -72,7 +61,7 @@ def LoadBotanyDataset(max_rows=10, max_cols=4,
       t['xs'] = np.asarray(t['xs'])
       t['xr'] = np.asarray(t['xr'])
       t['xo'] = np.asarray(t['xo'])
-    rows =[
+    rows = [
         [4, 8, 10, 14, 16, 19, 33, 35, 42, 46, 50, 57, 70, 100, 106],
         [1, 3, 4, 6, 10, 22, 29, 33, 47, 53, 73],
         [0, 2, 8, 9, 10, 11, 12, 13, 15, 17, 20, 22, 27],
@@ -86,11 +75,13 @@ def LoadBotanyDataset(max_rows=10, max_cols=4,
     xr = ['Blooming months', 'Pollen color']
     xs = ['Aster', 'Marigold', 'Fireweed']
     xo = [
-        ['Sep', 'red'],
-        ['Jun', 'orange'],
-        ['Jul', 'blue']]
+         ['Sep', 'red'],
+         ['Jun', 'orange'],
+         ['Jul', 'blue']]
     tables = tables[:4]
-    tables.append(dict(xr=xr, xs=xs, xo=xo,
+    tables.append(dict(xr=xr,
+                       xs=xs,
+                       xo=xo,
                        table_id='http://en.wikipedia.org/wiki/Pollen_source',
                        x_column='Scientific name'))
     t = tables[2]
@@ -159,7 +150,8 @@ PROSE = 3  # A cell with a string of more than 3 words,
 def PreprocessColumn(cells):
   """Returns a canonical representation of the cells in a column.
 
-  Applies heuristics to determine what category of data the majority of cells in a column are   referring to.
+  Applies heuristics to determine what category of data the majority of cells
+  in a column are referring to.
   For numeric data, the unit of the column is also heuristically determined.
   Based on that analysis, converts the cells into a canonical representation of
   instances of that data category.
@@ -181,14 +173,14 @@ def PreprocessColumn(cells):
     The third element is the ID of the modal category of the cells in the column,
     which is taken to be the category of the column as a whole.
   """
-  proc_cells = pandas.pandas.DataFrame([DecideCellType(cell) for cell in cells],
+  processed_cells = pandas.pandas.DataFrame([DecideCellType(cell) for cell in cells],
                                        columns=['type', 'value'])
-  missing = np.flatnonzero(proc_cells.type == BLANK)
-  proc_cells['value'][missing] = proc_cells['value'][missing - 1]
-  type_counts = proc_cells.groupby('type').size()
+  missing = np.flatnonzero(processed_cells.type == BLANK)
+  processed_cells['value'][missing] = processed_cells['value'][missing - 1]
+  type_counts = processed_cells.groupby('type').size()
   type_counts.sort(ascending=False)
   mode_type = type_counts.index[0]
-  return proc_cells['value'], proc_cells['type'] == mode_type, mode_type
+  return processed_cells['value'], processed_cells['type'] == mode_type, mode_type
 
 
 def DecideCellType(cell, extensive_checking=False):

@@ -4,3 +4,4 @@ import prior_sampler
 import state
 import mh
 import util
+import data
