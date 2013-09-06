@@ -4,12 +4,14 @@ import cPickle
 import itertools
 import logging
 import time
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 
 import posterior_sampler
+import util
 
 
 class Trace(object):
@@ -73,8 +75,10 @@ class Trace(object):
     """Returns the last state in the trace."""
     return self.samples[-1]
 
-  def Save(self, filename):
+  def Save(self, trace_id):
     """Saves the trace to disk."""
+    flags = util.GetFlags()
+    filename = os.path.join(flags['data_dir'], 'output', 'trace_%d.pickle' % trace_id)
     with open(filename, 'wb') as f:
       cPickle.dump(self, f, 2)
 

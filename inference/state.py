@@ -177,7 +177,11 @@ class State(object):
       A dataframe of facts augmented with the parameters of the range of the
       fact's relation.
     """
-    f = self.facts.join(self.rels, on='zr')
+    if 'zr' in self.facts:
+      zr = self.facts['zr']
+    else:
+      zr = self.facts.index.get_level_values('zr')
+    f = self.facts.join(self.rels, on=zr)
     return f
 
   def VisualizeWeights(self,
@@ -246,14 +250,17 @@ class State(object):
       filename = 'state.html'
     else:
       filename = 'state_%d.html' % plot_id
-    filename = os.path.join(output_dir, filename)
+    data_dir = util.GetFlags()['data_dir']
+    filename = os.path.join(data_dir, output_dir, filename)
     if output_format not in ['html']:
       raise util.TablesException(
           'Format %r not recognized' % output_format)
     if output_format == 'html':
       if produce_figs:
         self.ProduceFigures(output_dir)
-      template = jinja2.Template(open('templates/state_template.jinja2').read())
+
+      template = jinja2.Template(
+        open(os.path.join(data_dir, 'templates', 'state_template.jinja2')).read())
       html = template.render(s=self)
       with open(filename, 'w') as f:
         f.write(html)
@@ -267,6 +274,18 @@ class State(object):
     """Augment cells with the strings their tokens refer to."""
     entity_tokens = self.entity_tokenizer.StringList()
     rel_tokens = self.col_tokenizer.StringList()
+    try:
+      del self.rows['str']
+    except KeyError:
+      pass
+    try:
+      del self.cols['str']
+    except KeyError:
+      pass
+    try:
+      del self.cells['str']
+    except KeyError:
+      pass
     self.rows = self.rows.join(entity_tokens, on='xs')
     self.cols = self.cols.join(rel_tokens, on='xr')
     self.cells = self.cells.join(entity_tokens, on='xo_ref')

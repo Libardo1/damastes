@@ -4,11 +4,14 @@
 from __future__ import division
 
 import difflib
+import logging
 
-#from IPython import parallel
+from IPython import parallel
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas
+import argparse
+import os
 
 
 def Dview():
@@ -135,4 +138,34 @@ def StringSim(s1, s2):
 def GetRagged(x, y, values, counts):
   n = counts[x, y]
   return values[x, y, :n]
-  
+
+
+def GetFlags(use_command_line=False):
+  defaults = dict(data_dir='~/damastes',  dataset='botany', trace_id=0)
+  if use_command_line:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', type=str, default=defaults['data_dir'])
+    parser.add_argument('--dataset', '-d', type=str, default=defaults['dataset'])
+    parser.add_argument('--trace_id', '-t', type=int, default=defaults['trace_id'])
+    try:
+      args = parser.parse_args()
+    except SystemExit:
+      logging.warning('Failed to parse command-line input')
+      return GetFlags(False)
+    data_dir = args.data_dir
+    dataset = args.dataset
+    trace_id = args.trace_id
+  else:
+    data_dir = defaults['data_dir']
+    dataset = defaults['dataset']
+    trace_id = defaults['trace_id']
+  data_dir = os.path.expanduser(data_dir)
+  return dict(data_dir=data_dir, dataset=dataset, trace_id=trace_id)
+
+
+def ConfigureLogging():
+  logging.basicConfig(level=logging.DEBUG,
+                      format=('%(levelname)s %(asctime)s in '
+                              '%(module)s %(lineno)d: %(message)s'))
+
+

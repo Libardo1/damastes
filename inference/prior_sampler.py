@@ -29,7 +29,7 @@ import state
 import util
 
 
-def SamplePrior(desc):
+def SamplePrior(data_dims):
   """Draw a sample from the prior.
 
   Args:
@@ -40,7 +40,7 @@ def SamplePrior(desc):
   """
   prior_sample = state.State()
   prior_sample.K = state.SIZE
-  prior_sample.SetSize(desc)
+  prior_sample.SetSize(data_dims)
   UpdateHypersFromPrior(prior_sample)
   UpdateModelParamsFromPrior(prior_sample)
   UpdateRelationsFromPrior(prior_sample)
@@ -57,6 +57,17 @@ def SamplePrior(desc):
   prior_sample.ConvertToThirdNormalForm()
   UpdateObservationsFromPrior(prior_sample)
   return prior_sample
+
+
+def ResampleLatents(state):
+  UpdateHypersFromPrior(state)
+  UpdateModelParamsFromPrior(state)
+  UpdateRelationsFromPrior(state)
+  #UpdateFactsFromPrior(state)
+  UpdateTopicsFromPrior(state)
+  UpdateRowsFromPrior(state)
+  UpdateColsFromPrior(state)
+
 
 # These Update functions all take a State object and update it in-place
 
